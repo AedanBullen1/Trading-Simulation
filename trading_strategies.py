@@ -15,45 +15,61 @@ class Strategies:
         self.price = price
 
 
-    def HOLD(self, price):
+    def HOLD(self):
 
-        buy_and_hold = pd.Series(1, index=price.index)
+        buy_and_hold = pd.Series(1, index=self.price.index)
 
-        return {"HOLD": buy_and_hold}
+        return buy_and_hold
     
-    def MOM(self, price):
+    def MOM(self):
 
-        momentum = (price.diff() > 0).astype(int)
+        momentum = (self.price.diff() > 0).astype(int)
 
-        return {"MOM": momentum}
+        return momentum
     
-    def MAC(self, price):
+    def MAC(self):
 
-        short_ma = price.rolling(20).mean()
-        long_ma = price.rolling(50).mean()
+        short_ma = self.price.rolling(20).mean()
+        long_ma = self.price.rolling(50).mean()
         ma_cross = (short_ma > long_ma).astype(int)
+        ma_cross = ma_cross.fillna(0)
 
-        return {"Moving average convergence": ma_cross}
+        return ma_cross
     
-    def RSI(self, price):
+    def RSI(self):
 
-        delta = price.diff()
+        delta = self.price.diff()
         gain = delta.clip(lower=0).rolling(14).mean()
         loss = -delta.clip(upper=0).rolling(14).mean()
-        rsi = 100 - (100 / (1+gain/loss))
+        rsi = 100 - (100 / (1+gain/loss.replace(0, np.nan)))
 
         rsi_signal = (rsi < 30).astype(int)
 
-        return {"RSI": rsi_signal}
+        return rsi_signal
     
-    def BB(self, price):
+    def BB(self):
 
-        ma = price.rolling(20).mean()
-        std = price.rolling(20).std()
+        ma = self.price.rolling(20).mean()
+        std = self.price.rolling(20).std()
         lower_band = ma - 2 * std
-        bb_signal = (price < lower_band).astype(int)
+        bb_signal = (self.price < lower_band).astype(int)
 
-        return {"Bollinger bands": bb_signal}
+        return bb_signal
+    
+
+    def combine_strategies(self):
+        
+        strategies = {
+            "HOLD": self.HOLD(),
+            "MOM": self.MOM(),
+            "Moving Average Crossover": self.MAC(),
+            "RSI": self.RSI(),
+            "Bollinger Bands": self.BB()
+            }
+        
+        return strategies
+
+
 
 
         

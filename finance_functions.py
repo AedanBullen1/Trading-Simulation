@@ -14,13 +14,15 @@ class HelperFunctions:
 
 
     @staticmethod
-    def equity_curve(signal: pd.Series, returns: pd.Series, starting_cash: float = 10_000) -> pd.Series:
+    def equity_curve(signal: pd.Series, returns: pd.Series, starting_cash: float = 10_000, cost=0.001) -> pd.Series:
         """Finds growth data based on strategy"""
     
         shifted_signal = signal.shift(1).fillna(0) # 1 day later. Cannot use today's signal to trade today.
-    # the signal is the 1/0 trade/don't boolean. Also fills any nans.
-
-        daily_growth = 1 + shifted_signal * returns # shifted signal (using whatever strategy) times returns
+    # the signal is the 1/0 keep/don't boolean. Also fills any nans.
+        
+        trade_days = shifted_signal.diff().fillna(0) != 0 # trade only if signal changes.
+        cost_multiplier = 1 - (trade_days * cost)
+        daily_growth = (1 + shifted_signal * returns) * cost_multiplier
     # what growth u get if you use said method.
     # if signal 0 (out of market) 1 + 0 * return = 1.0, no change
     # if signal 1 (in market) 1 + 1 * return = ...
